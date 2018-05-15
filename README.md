@@ -4,7 +4,7 @@ Ditto is a cluster replication tool for [Event Store](http://eventstore.org). It
 
 It was designed to be run as a standalone application using Docker. 
 
-Most of the code is part of our boilerplate Event Consumer template that we use at Checkout.com and automatically take care of Event Store connection management and logging via Serilog / Seq.
+Most of the code is part of our boilerplate Event Consumer template and automatically takes care of Event Store connection management and logging via Serilog / Seq.
 
 ### Configuration
 
@@ -21,7 +21,7 @@ The application can be configured via JSON (`appsettings.json`) or using Environ
 | ReplicationThrottleInterval | Ditto_Settings:ReplicationThrottleInterval | 0 | The interval in milliseconds to wait between events. This can be useful if you want to reduce the load on your source server |
 
 
-**Note - When replicating category streams you will need to escape the `$` in the stream identifier under docker for example, to replicate the category stream `$ce-emails` set your stream identifier to `$$ce-emails`.
+**Note - When replicating category streams you will need to escape the `$` in the stream identifier under docker, for example, to replicate the category stream `$ce-emails` set your stream identifier to `$$ce-emails`.
 
 ### Ditto Checkpoints
 
@@ -35,7 +35,7 @@ Ditto generates a checkpoint stream for each stream you subscribe to, named acco
 }
 ```
 
-The Ditto Checkpoint Manager defers the writing of checkpoints according to the `CheckpointSavingInterval` setting. If you're replicating a large number of events it does not make sense to write the checkpoint after each event is replicated. In most cases we dial this up to around 10,000 milliseconds. 
+The Ditto Checkpoint Manager defers the writing of checkpoints according to the `CheckpointSavingInterval` setting. If you're replicating a large number of events it does not make sense to write the checkpoint after each event is replicated. We usually set this to around 10 seconds.
 
 #### Idempotency
 
@@ -43,15 +43,15 @@ Note that because we're using the source stream event version and event ID, the 
 
 ### Replication Considerations
 
-Ditto was originally designed to replicate the `$all` system stream. However, I found that this resulted in the replication of a lot of internal streams/events which we did not want. Since it's [not currently possible](https://github.com/EventStore/EventStore/issues/718) to ignore system streams I opted to explicitly specify the streams we want to replicate.
+Ditto was originally designed to replicate the `$all` system stream. However, I found that this resulted in the replication of a lot of internal streams/events which we did not want. Since it's [not currently possible](https://github.com/EventStore/EventStore/issues/718) to ignore system streams I opted to explicitly specify the streams to replicate.
 
-Instead we subscribe to category streams e.g. `$ce-emails` and then populate the original streams on the destination cluster, for example:
+We usually subscribe to category streams e.g. `$ce-emails` and then populate the original streams on the destination cluster, for example:
 
 ![Ditto in action](docs/img/ditto.png)
 
 ### Running the example
 
-To run the example, clone the repository and run `docker-compose up --build` from the root of the repository. This will start:
+To run the example, clone the repository and run `docker-compose up --build`. This will start:
 
 1. Source Event Store at [http://localhost:2113](http://localhost:2113)
 2. Destination Event Store at [http://localhost:4113](http://localhost:4113)
