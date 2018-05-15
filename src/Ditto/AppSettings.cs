@@ -29,7 +29,7 @@ namespace Ditto
         public int CheckpointManagerRetryCount { get; set; }
 
         /// <summary>
-        /// Gets or sets the checkpoint manager retry interval in seconds
+        /// Gets or sets the checkpoint manager retry interval in milliseconds
         /// </summary>
         public int CheckpointManagerRetryInterval { get; set; }
 

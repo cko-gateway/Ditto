@@ -46,7 +46,7 @@ namespace Ditto
             _loadPolicy = Policy
                 .Handle<Exception>()
                 .WaitAndRetryAsync(settings.CheckpointManagerRetryCount,
-                    i => TimeSpan.FromSeconds(settings.CheckpointManagerRetryInterval), (ex, ts) => {
+                    i => TimeSpan.FromMilliseconds(settings.CheckpointManagerRetryInterval), (ex, ts) => {
                         _logger.Error(ex, "Error reading checkpoint stream");
                     });
 

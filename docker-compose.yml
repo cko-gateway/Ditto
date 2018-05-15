@@ -52,7 +52,7 @@ services:
       - Ditto_Settings:DestinationEventStoreConnectionString=ConnectTo=tcp://admin:changeit@eventstore-dest:3113;
       - Ditto_Settings:StreamIdentifiers=$$ce-emails;
       - Ditto_Settings:CheckpointManagerRetryCount=5
-      - Ditto_Settings:CheckpointManagerRetryInterval=1
+      - Ditto_Settings:CheckpointManagerRetryInterval=1000
       - Ditto_Settings:CheckpointSavingInterval=5000
       - Ditto_Settings:ReplicationThrottleInterval=0 # Time in milliseconds to wait between writes
       # Change this to "Error" in production:
