@@ -25,12 +25,12 @@ namespace Ditto
             });
 
         public static Counter.Child WithConsumerLabels(this Counter counter, ICompetingConsumer consumer)
-            => counter.WithLabels("ditto", consumer.GroupName, consumer.StreamName);
+            => counter.WithLabels("ditto", consumer.StreamName, consumer.GroupName);
 
         public static Gauge.Child WithConsumerLabels(this Gauge counter, ICompetingConsumer consumer)
-            => counter.WithLabels("ditto", consumer.GroupName, consumer.StreamName);
+            => counter.WithLabels("ditto", consumer.StreamName, consumer.GroupName);
 
         public static Summary.Child WithConsumerLabels(this Summary summary, ICompetingConsumer consumer)
-            => summary.WithLabels("ditto", consumer.GroupName, consumer.StreamName);
+            => summary.WithLabels("ditto", consumer.StreamName, consumer.GroupName);
     }
 }
