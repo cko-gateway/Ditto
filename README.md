@@ -6,6 +6,15 @@ It was designed to be run as a standalone application using Docker and uses [Eve
 
 Most of the code is part of our boilerplate Event Consumer template and automatically takes care of Event Store connection management and logging via Serilog. The application is configured to use [Seq](https://datalust.co/seq) locally and Datadog in production.
 
+### Docker Image
+
+Docker images are hosted on https://hub.docker.com/r/benfoster/ditto.
+
+```
+docker pull benfoster/ditto
+```
+
+
 ### Configuration
 
 The application can be configured via JSON (`appsettings.json`) or using Environment Variables:
@@ -35,7 +44,7 @@ We usually subscribe to category streams e.g. `$ce-emails` and then populate the
 
 ![Ditto in action](docs/img/ditto.png)
 
-### Running the example
+### Running locally
 
 To run the example, clone the repository and run `docker-compose -f docker-compose.yml -f docker-compose.apps.yml up --build`. This will start:
 
