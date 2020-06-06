@@ -3,19 +3,21 @@ version: "3"
 services:
 
   eventstore-source:
-    image: eventstore/eventstore:release-4.0.1
+    build:
+      context: ./docker-setup/eventstore
+      dockerfile: Dockerfile
     container_name: ditto-es-source
-    # http://docs.geteventstore.com/server/4.0.0/command-line-arguments/
     environment:
       - EVENTSTORE_START_STANDARD_PROJECTIONS=TRUE
       - EVENTSTORE_RUN_PROJECTIONS=All
       - EVENTSTORE_MEM_DB=true
+      - SEED_DATA=true
     ports:
       - "1113:1113"
       - "2113:2113"
 
   eventstore-dest:
-    image: eventstore/eventstore:release-4.0.1
+    image: eventstore/eventstore:release-5.0.8
     container_name: ditto-es-dest
     # http://docs.geteventstore.com/server/4.0.0/command-line-arguments/
     environment:
@@ -37,27 +39,27 @@ services:
     ports:
       - 5341:80 
 
-  consumer:
-    build:
-      context: ./src/Ditto
-      dockerfile: ./Dockerfile
-    depends_on:
-      - seq
-      - eventstore-source
-      - eventstore-dest
-    container_name: Ditto
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - Ditto_Settings:SourceEventStoreConnectionString=ConnectTo=tcp://admin:changeit@eventstore-source:1113;
-      - Ditto_Settings:DestinationEventStoreConnectionString=ConnectTo=tcp://admin:changeit@eventstore-dest:3113;
-      - Ditto_Settings:StreamIdentifiers=$$ce-emails;
-      - Ditto_Settings:CheckpointManagerRetryCount=5
-      - Ditto_Settings:CheckpointManagerRetryInterval=1000
-      - Ditto_Settings:CheckpointSavingInterval=5000
-      - Ditto_Settings:ReplicationThrottleInterval=0 # Time in milliseconds to wait between writes
-      # Change this to "Error" in production:
-      - Ditto_Serilog:WriteTo:0:Args:restrictedToMinimumLevel=Debug
-      # Point to the remote Seq instance
-      - Ditto_Serilog:WriteTo:1:Args:serverUrl=http://ditto-seq:5341
-      - Ditto_Serilog:WriteTo:1:Args:apiKey=xxx
+  # consumer:
+  #   build:
+  #     context: ./src/Ditto
+  #     dockerfile: ./Dockerfile
+  #   depends_on:
+  #     - seq
+  #     - eventstore-source
+  #     - eventstore-dest
+  #   container_name: Ditto
+  #   environment:
+  #     - ASPNETCORE_ENVIRONMENT=Development
+  #     - Ditto_Settings:SourceEventStoreConnectionString=ConnectTo=tcp://admin:changeit@eventstore-source:1113;
+  #     - Ditto_Settings:DestinationEventStoreConnectionString=ConnectTo=tcp://admin:changeit@eventstore-dest:3113;
+  #     - Ditto_Settings:StreamIdentifiers=$$ce-emails;
+  #     - Ditto_Settings:CheckpointManagerRetryCount=5
+  #     - Ditto_Settings:CheckpointManagerRetryInterval=1000
+  #     - Ditto_Settings:CheckpointSavingInterval=5000
+  #     - Ditto_Settings:ReplicationThrottleInterval=0 # Time in milliseconds to wait between writes
+  #     # Change this to "Error" in production:
+  #     - Ditto_Serilog:WriteTo:0:Args:restrictedToMinimumLevel=Debug
+  #     # Point to the remote Seq instance
+  #     - Ditto_Serilog:WriteTo:1:Args:serverUrl=http://ditto-seq:5341
+  #     - Ditto_Serilog:WriteTo:1:Args:apiKey=xxx
     

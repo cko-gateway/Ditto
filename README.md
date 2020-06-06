@@ -2,9 +2,9 @@
 
 Ditto is a cluster replication tool for [Event Store](http://eventstore.org). It works by subscribing to specific streams from a _source_ cluster and replicating them to a _destination_ cluster.
 
-It was designed to be run as a standalone application using Docker. 
+It was designed to be run as a standalone application using Docker and uses [Event Store Subscription Groups](https://eventstore.com/docs/dotnet-api/competing-consumers/index.html) to subscribe to the source server/cluster.
 
-Most of the code is part of our boilerplate Event Consumer template and automatically takes care of Event Store connection management and logging via Serilog / Seq.
+Most of the code is part of our boilerplate Event Consumer template and automatically takes care of Event Store connection management and logging via Serilog. The application is configured to use [Seq](https://datalust.co/seq) locally and Datadog in production.
 
 ### Configuration
 
@@ -12,34 +12,16 @@ The application can be configured via JSON (`appsettings.json`) or using Environ
 
 | JSON Setting | Environment Variable | Default Value | Description |
 | ------------ | -------------------- | ----------- | ----------- |
-| SourceEventStoreConnectionString | Ditto_Settings:SourceEventStoreConnectionString |   | The source event store connection string |
-| DestinationEventStoreConnectionString | Ditto_Settings:DestinationEventStoreConnectionString |   | The destination event store connection string |
-| CheckpointSavingInterval | Ditto_Settings:CheckpointSavingInterval | 5000 | The interval in milliseconds before the current checkpoint is saved |
-| StreamIdentifiers | Ditto_Settings:StreamIdentifiers |  | Semi-colon (`;`) separated identifiers of streams that should be replicated* |
-| CheckpointManagerRetryCount | Ditto_Settings:CheckpointManagerRetryCount | 5 | The number of times the Checkpoint Manager should attempt to save the Checkpoint in the event of a failure
-| CheckpointManagerRetryInterval | Ditto_Settings:CheckpointManagerRetryInterval | 1000 | The interval in milliseconds between Checkpoint Manager retries |
-| ReplicationThrottleInterval | Ditto_Settings:ReplicationThrottleInterval | 0 | The interval in milliseconds to wait between events. This can be useful if you want to reduce the load on your source server |
-
-
-**Note - When replicating category streams you will need to escape the `$` in the stream identifier under docker, for example, to replicate the category stream `$ce-emails` set your stream identifier to `$$ce-emails`.
-
-### Ditto Checkpoints
-
-Ditto will start a new catchup subscription for each stream you subscribe to and automatically take care of maintaining the last checkpoint of each stream. This means you can safely stop and start Ditto and it will pick up where it left off. 
-
-Ditto generates a checkpoint stream for each stream you subscribe to, named according to the source stream. For example, when subscribing to the `$ce-emails` stream, a new checkpoint stream will be created on the destination server called `Ditto_ReplicatingConsumer_ce_emails_Checkpoint`. Each time the Ditto Checkpoint Manager saves the current checkpoint, a `Checkpoint` event is written to the above stream, for example:
-
-```
-{
-  "LastEventProcessed": 0
-}
-```
-
-The Ditto Checkpoint Manager defers the writing of checkpoints according to the `CheckpointSavingInterval` setting. If you're replicating a large number of events it does not make sense to write the checkpoint after each event is replicated. We usually set this to around 10 seconds.
+| SourceEventStoreConnectionString | Ditto_Settings__SourceEventStoreConnectionString |   | The source event store connection string |
+| DestinationEventStoreConnectionString | Ditto_Settings__DestinationEventStoreConnectionString |   | The destination event store connection string |
+| PersistentSubscriptionBufferSize | Ditto_Settings__PersistentSubscriptionBufferSize | 10 | The buffer size of the subscription. This should be increased for large, frequently updated streams |
+| ReplicationThrottleInterval | Ditto_Settings__ReplicationThrottleInterval | 0 | The interval in milliseconds to wait between events. This can be useful if you want to reduce the load on your source server |
+| SkipVersionCheck | Ditto_Settings__SkipVersionCheck | false | Whether to skip the version check when replicating streams. This may need to be enabled if you are partially replicating streams rather than reading from the beginning |
+| Subscriptions | Ditto_Settings__Subscriptions |  | Array of the persistent subscriptions that should be used for replication |
 
 #### Idempotency
 
-Note that because we're using the source stream event version and event ID, the writes are idempotent. This means that should Ditto be shut down before the last checkpoint is written, you will not get duplicate events when it restarts.
+Events are replicated without modification. Event Store provides best effort idempotency based on the Stream and Event identifiers. If version checking is enabled (see above) then Event Store guarantees idempotency. [More information](https://eventstore.com/docs/dotnet-api/optimistic-concurrency-and-idempotence/index.html#idempotence).
 
 ### Replication Considerations
 
@@ -51,44 +33,45 @@ We usually subscribe to category streams e.g. `$ce-emails` and then populate the
 
 ### Running the example
 
-To run the example, clone the repository and run `docker-compose up --build`. This will start:
+To run the example, clone the repository and run `docker-compose -f docker-compose.yml -f docker-compose.apps.yml up --build`. This will start:
 
 1. Source Event Store at [http://localhost:2113](http://localhost:2113)
 2. Destination Event Store at [http://localhost:4113](http://localhost:4113)
 3. SEQ at [http://localhost:5341](http://localhost:5341)
-4. Ditto replicating the `$ce-emails` category stream from the source to destination servers
+4. Ditto
 
-To test the replication you can use the Event Store HTTP API to create some email events on the source:
+The docker setup will automatically seed the source event store with "customer" events that you can view at http://localhost:2113/web/index.html#/streams/$ce-customer and setup a persistent subscription for the `$ce-customer` category stream.
+
+Ditto will connect to the persistent subscription and start consuming events.
+
+To test the replication you can use the Event Store HTTP API to create some customer events on the source:
 
 ```
-curl -X POST \
-  http://localhost:2113/streams/emails-john.smith@example.com \
-  -H 'Accept: application/json' \
-  -H 'Cache-Control: no-cache' \
-  -H 'Content-Type: application/vnd.eventstore.events+json' \
-  -H 'ES-ExpectedVersion: -2' \
-  -H 'Postman-Token: a75df4e7-7aa5-d5c4-e056-580d71c28ac6' \
-  -d '[
-  {
-    "eventId": "ba54c41a-15fe-4c0d-9687-6b017df77b37",
-    "eventType": "EmailSent",
-    "data": {
-      "from": "info@eventstore.org",
-      "sentOn": "2017-11-08T07:27:04Z",
-      "message": "Hey, have you heard about Event Store?"
+curl --location --request POST 'http://localhost:2113/streams/customer-6d3d4dca-9889-416b-a266-4bf760261f01' \
+-u admin:changeit \
+-H 'Content-Type: application/vnd.eventstore.events+json' \
+--data-raw '[
+    {
+        "eventId": "ab932527-5b9a-4868-82f3-42194bbfd022",
+        "eventType": "customer_registered",
+        "data": {
+            "first_name": "John",
+            "last_name": "Smith",
+            "phone_number": "0111111111111"
+        },
+        "metadata": {
+            "source": "ditto"
+        }
     }
-  }
-]
-'
+]'
 ```
 
-You should then be able to browse to the stream at [http://localhost:2113/web/index.html#/streams/emails-john.smith@example.com](http://localhost:2113/web/index.html#/streams/emails-john.smith@example.com) and see the event in the `$ce-emails` category stream at [http://localhost:2113/web/index.html#/streams/$ce-emails](http://localhost:2113/web/index.html#/streams/$ce-emails).
+You should then be able to browse to the stream at [http://localhost:2113/web/index.html#/streams/customer-6d3d4dca-9889-416b-a266-4bf760261f01](http://localhost:2113/web/index.html#/streams/customer-6d3d4dca-9889-416b-a266-4bf760261f01) and see the event in the `$ce-customer` category stream at [http://localhost:213/web/index.html#/streams/$ce-customer](http://localhost:2113/web/index.html#/streams/$ce-customer).
 
 Ditto will then replicate this event to the destination server/cluster. You should see output similar to the following in stdout and in SEQ:
 
 ```
-2018-05-15 10:11:16 INF Replicating "EmailSent" #0 from "emails-john.smith@example.com" "completed" in 35.9 ms
+Replicating customer_registered #0 from customer-cbea713f-b396-46f4-8c67-81e04b37d334 (Original Event: #16) completed in 17.7 ms
 ```
 
-You should then be able to browse to the same stream on the destination server at [http://localhost:4113/web/index.html#/streams/emails-john.smith@example.com](http://localhost:4113/web/index.html#/streams/emails-john.smith@example.com)
-
+You should then be able to browse to the same stream on the destination server at [http://localhost:4113/web/index.html#/streams/customer-6d3d4dca-9889-416b-a266-4bf760261f01](http://localhost:4113/web/index.html#/streams/customer-6d3d4dca-9889-416b-a266-4bf760261f01).

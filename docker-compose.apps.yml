@@ -1,0 +1,24 @@
+version: "3"
+
+services:
+
+  consumer:
+    build:
+      context: .
+      dockerfile: ./src/Ditto/Dockerfile
+    depends_on:
+      - seq
+      - eventstore-source
+      - eventstore-dest
+    container_name: Ditto
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - Ditto_Settings__SourceEventStoreConnectionString=ConnectTo=tcp://admin:changeit@eventstore-source:1113;
+      - Ditto_Settings__DestinationEventStoreConnectionString=ConnectTo=tcp://admin:changeit@eventstore-dest:3113;
+      - Ditto_Settings__Streams__0__StreamName=$$ce-customer
+      - Ditto_Settings__Streams__0__GroupName=ditto-customer
+      - Ditto_Settings__ReplicationThrottleInterval=0 # Time in milliseconds to wait between writes
+      - Ditto_Serilog__WriteTo__0__Args:restrictedToMinimumLevel=Debug
+      - Ditto_Serilog__WriteTo__1__Args:serverUrl=http://ditto-seq:5341
+      - Ditto_Serilog__WriteTo__1__Args:apiKey=xxx
+    

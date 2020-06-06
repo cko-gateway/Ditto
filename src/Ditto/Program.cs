@@ -4,8 +4,8 @@ using System.Runtime.Loader;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog;
-using StructureMap;
 
 namespace Ditto
 {
@@ -17,7 +17,7 @@ namespace Ditto
         private readonly ILogger _logger;
         private readonly IConfiguration _configuration;
         private readonly AutoResetEvent _closing = new AutoResetEvent(false);
-        private IContainer _container;
+        private IServiceProvider _serviceProvider;
         private AppService _service;
 
         /// <summary>
@@ -61,11 +61,8 @@ namespace Ditto
                 if (IsDevelopmentEnvironment())
                     _logger.Information(_configuration.Dump());
 
-                _container = new Container(cfg =>
-                    cfg.AddRegistry(new AppRegistry(_configuration, _logger))
-                );
-
-                _service = _container.GetInstance<AppService>();
+                _serviceProvider = AppRegistry.Register(_configuration, new ServiceCollection()).BuildServiceProvider();
+                _service = _serviceProvider.GetService<AppService>();
                 await _service.StartAsync();
 
                 // Block until an exit signal is detected
@@ -131,7 +128,7 @@ namespace Ditto
             return new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: true)
-                .AddJsonFile("appsettings.local.json", optional: true)
+                .AddJsonFile($"appsettings.{CurrentEnvironment}.json", optional: true)
                 .AddEnvironmentVariables(prefix: "Ditto_")
                 .Build();
         }
@@ -140,10 +137,8 @@ namespace Ditto
         /// Determines whether the application is running in Development mode
         /// </summary>
         /// <returns>True if running in Development, otherwise False</returns>
-        private static bool IsDevelopmentEnvironment()
-        {
-            var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-            return "Development".Equals(environment, StringComparison.OrdinalIgnoreCase);
-        }
+        private static bool IsDevelopmentEnvironment() => "Development".Equals(CurrentEnvironment, StringComparison.OrdinalIgnoreCase);
+        
+        private static string CurrentEnvironment => Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
     }
 }

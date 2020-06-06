@@ -1,0 +1,5 @@
+{
+    "resolveLinktos": "true",
+    "checkPointAfterMilliseconds": "10000",
+    "namedConsumerStrategy": "Pinned"
+}

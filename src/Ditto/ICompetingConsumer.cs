@@ -2,15 +2,17 @@ using EventStore.ClientAPI;
 
 namespace Ditto
 {
-    /// <summary>
-    /// Defines the contract for Event Store stream consumers
-    /// </summary>
-    public interface IConsumer
+    public interface ICompetingConsumer
     {
         /// <summary>
         /// Gets the name of the stream to consumer
         /// </summary>
         string StreamName { get; }
+
+        /// <summary>
+        /// Gets the name of the subscription group
+        /// </summary>
+        string GroupName { get; }
         
         /// <summary>
         /// Indicates whether an event with the specified type name can be consumed

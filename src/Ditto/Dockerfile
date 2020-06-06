@@ -1,20 +1,20 @@
-FROM microsoft/dotnet:2.1-sdk-alpine AS build
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1-alpine AS base
 
 ARG BUILDCONFIG=RELEASE
 ARG VERSION=1.0.0
 
 # copy csproj and restore as distinct layers
-COPY ./Ditto.csproj ./Ditto/
+COPY ./src/Ditto/Ditto.csproj ./Ditto/
 RUN dotnet restore Ditto/Ditto.csproj
 
 # copy everything else and build
-COPY ./ ./Ditto/
-WORKDIR /Ditto/
-RUN dotnet publish -c $BUILDCONFIG -o out /p:Version=$VERSION
+COPY ./src/Ditto/ ./Ditto/
+RUN dotnet publish Ditto/Ditto.csproj --runtime linux-musl-x64 -c $BUILDCONFIG -o out /p:Version=$VERSION -p:PublishTrimmed=true
 
 # build runtime image
-FROM microsoft/dotnet:2.1-runtime-alpine
+FROM mcr.microsoft.com/dotnet/core/runtime-deps:3.1-alpine
 WORKDIR /app
-COPY --from=build /Ditto/out ./
+COPY --from=base /out ./
 
-ENTRYPOINT ["dotnet", "Ditto.dll"]
+EXPOSE 5000
+ENTRYPOINT ["./Ditto"]

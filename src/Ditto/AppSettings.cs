@@ -19,33 +19,29 @@ namespace Ditto
         public string DestinationEventStoreConnectionString { get; set; }
 
         /// <summary>
-        /// Gets or sets the IDs of the streams that should be copied. Separated with a semi colon ";"
-        /// </summary>
-        public string StreamIdentifiers {get;set;}
-
-        /// <summary>
-        /// Gets or sets the checkpoint manager retry count 
-        /// </summary>
-        public int CheckpointManagerRetryCount { get; set; }
-
-        /// <summary>
-        /// Gets or sets the checkpoint manager retry interval in milliseconds
-        /// </summary>
-        public int CheckpointManagerRetryInterval { get; set; }
-
-        /// <summary>
-        /// Gets or sets the interval in milliseconds that consumer checkpoints are saved
-        /// </summary>
-        public int CheckpointSavingInterval { get; set; }
-
-        /// <summary>
         /// Gets or sets the time in milliseconds to wait between event handling
         /// </summary>
-        public int? ReplicationThrottleInterval {get;set;}
-        
-        public IEnumerable<string> GetStreamsToReplicate()
+        public int? ReplicationThrottleInterval { get; set; }
+
+        /// <summary>
+        /// Gets the event store subscriptions to replicate
+        /// </summary>
+        public IEnumerable<Subscription> Subscriptions { get; set; }
+
+        /// <summary>
+        /// Gets the buffer size for subscriptions
+        /// </summary>
+        public int? PersistentSubscriptionBufferSize { get; set; }
+
+        /// <summary>
+        /// Gets whether the event version check should be skipped when replicating events
+        /// </summary>
+        public bool SkipVersionCheck { get; set; }
+
+        public class Subscription
         {
-            return (StreamIdentifiers ?? "").Trim().Split(';', StringSplitOptions.RemoveEmptyEntries);
+            public string StreamName { get; set; }
+            public string GroupName { get; set; }
         }
     }
 }
