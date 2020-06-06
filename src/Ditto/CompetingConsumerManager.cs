@@ -14,7 +14,7 @@ namespace Ditto
         private const int DefaultBufferSize = 10;
         private const int SubscriptionStopTimeoutSeconds = 10;
         private static SubscriptionDropReason[] SkipStopReasons = new[] { SubscriptionDropReason.ConnectionClosed, SubscriptionDropReason.UserInitiated };
-        
+
         private readonly IEventStoreConnection _connection;
         private readonly AppSettings _settings;
         private readonly Serilog.ILogger _logger;
@@ -110,9 +110,9 @@ namespace Ditto
             runningConsumer.Subscription.Stop(TimeSpan.FromSeconds(10));
         }
 
-        private Action<EventStorePersistentSubscriptionBase, ResolvedEvent> OnEventAppeared(ICompetingConsumer consumer)
+        private Func<EventStorePersistentSubscriptionBase, ResolvedEvent, Task> OnEventAppeared(ICompetingConsumer consumer)
         {
-            return (sub, e) =>
+            return async (sub, e) =>
             {
                 if (!e.IsResolved) // Handle deleted streams
                 {
@@ -130,7 +130,7 @@ namespace Ditto
 
                 try
                 {
-                    consumer.Consume(e.Event.EventType, e);
+                    await consumer.ConsumeAsync(e.Event.EventType, e);
                     sub.Acknowledge(e);
                 }
                 catch (Exception ex)

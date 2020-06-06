@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using SerilogTimings.Extensions;
 
@@ -28,7 +29,7 @@ namespace Ditto
         public string GroupName { get; }
         public bool CanConsume(string eventType) => true;
 
-        public void Consume(string eventType, ResolvedEvent resolvedEvent)
+        public async Task ConsumeAsync(string eventType, ResolvedEvent resolvedEvent)
         {
             if (string.IsNullOrWhiteSpace(eventType)) throw new ArgumentException("Event type required", nameof(eventType));
             
@@ -46,12 +47,11 @@ namespace Ditto
                 resolvedEvent.Event.EventStreamId,
                 resolvedEvent.OriginalEventNumber))
             {
-                _connection.AppendToStreamAsync(
+                await _connection.AppendToStreamAsync(
                     resolvedEvent.Event.EventStreamId, 
                     _settings.SkipVersionCheck ? ExpectedVersion.Any : resolvedEvent.Event.EventNumber - 1, 
                     eventData
-                )
-                .GetAwaiter().GetResult();
+                );
             }
 
             if (_settings.ReplicationThrottleInterval.GetValueOrDefault() > 0)

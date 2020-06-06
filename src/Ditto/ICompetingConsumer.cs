@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using EventStore.ClientAPI;
 
 namespace Ditto
@@ -26,6 +27,6 @@ namespace Ditto
         /// </summary>
         /// <param name="eventType">The event type</param>
         /// <param name="e">The event store event</param>
-        void Consume(string eventType, ResolvedEvent e);
+        Task ConsumeAsync(string eventType, ResolvedEvent e);
     }
 }
