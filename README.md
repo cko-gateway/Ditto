@@ -23,6 +23,10 @@ The application can be configured via JSON (`appsettings.json`) or using Environ
 
 Events are replicated without modification. Event Store provides best effort idempotency based on the Stream and Event identifiers. If version checking is enabled (see above) then Event Store guarantees idempotency. [More information](https://eventstore.com/docs/dotnet-api/optimistic-concurrency-and-idempotence/index.html#idempotence).
 
+### Metrics
+
+Metrics are exposed on http://localhost:5000/metrics in Prometheus format.
+
 ### Replication Considerations
 
 Ditto was originally designed to replicate the `$all` system stream. However, I found that this resulted in the replication of a lot of internal streams/events which we did not want. Since it's [not currently possible](https://github.com/EventStore/EventStore/issues/718) to ignore system streams I opted to explicitly specify the streams to replicate.

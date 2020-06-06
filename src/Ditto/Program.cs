@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Prometheus;
 using Serilog;
 
 namespace Ditto
@@ -19,6 +20,7 @@ namespace Ditto
         private readonly AutoResetEvent _closing = new AutoResetEvent(false);
         private IServiceProvider _serviceProvider;
         private AppService _service;
+        private MetricServer _metricsServer;
 
         /// <summary>
         /// Entry point for the application
@@ -65,6 +67,14 @@ namespace Ditto
                 _service = _serviceProvider.GetService<AppService>();
                 await _service.StartAsync();
 
+                MetricsSettings metrics = _configuration.Bind<MetricsSettings>("Metrics");
+
+                if (metrics.Enabled)
+                {
+                    _metricsServer = new MetricServer(port: metrics.Port, url: metrics.Path);
+                    _metricsServer.Start();
+                }
+
                 // Block until an exit signal is detected
                 _closing.WaitOne();
             }
@@ -81,6 +91,7 @@ namespace Ditto
             try
             {
                 _service?.StopAsync().GetAwaiter().GetResult();
+                _metricsServer?.Stop();
             }
             catch (Exception ex)
             {
@@ -138,7 +149,7 @@ namespace Ditto
         /// </summary>
         /// <returns>True if running in Development, otherwise False</returns>
         private static bool IsDevelopmentEnvironment() => "Development".Equals(CurrentEnvironment, StringComparison.OrdinalIgnoreCase);
-        
+
         private static string CurrentEnvironment => Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
     }
 }

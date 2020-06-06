@@ -114,27 +114,35 @@ namespace Ditto
         {
             return async (sub, e) =>
             {
+                DittoMetrics.ReceivedEvents.WithConsumerLabels(consumer).Inc();
+                DittoMetrics.CurrentEvent.WithConsumerLabels(consumer).Set(e.OriginalEventNumber);
+                
                 if (!e.IsResolved) // Handle deleted streams
                 {
+                    DittoMetrics.UnresolvedEvents.WithConsumerLabels(consumer).Inc();
                     sub.Fail(e, PersistentSubscriptionNakEventAction.Park, "Unresolved Event");
                     return;
                 }
 
                 if (!consumer.CanConsume(e.Event.EventType))
                 {
+                    DittoMetrics.SkippedEvents.WithConsumerLabels(consumer).Inc();
                     sub.Fail(e, PersistentSubscriptionNakEventAction.Skip, "Cannot consume");
                     return;
                 }
 
-                var consumerId = GetConsumerId(consumer);
+                string consumerId = GetConsumerId(consumer);
 
                 try
                 {
                     await consumer.ConsumeAsync(e.Event.EventType, e);
+                    DittoMetrics.ProcessedEvents.WithConsumerLabels(consumer).Inc();
                     sub.Acknowledge(e);
                 }
                 catch (Exception ex)
                 {
+                    DittoMetrics.FailedEvents.WithConsumerLabels(consumer).Inc();
+                    
                     _logger.Error(ex, "{Consumer} failed to handle {EventType} #{EventNumber} from {StreamName} in group {GroupName}",
                         consumerId, e.Event.EventType, e.OriginalEventNumber, consumer.StreamName, consumer.GroupName);
 
