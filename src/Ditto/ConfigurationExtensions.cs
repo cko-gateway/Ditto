@@ -43,5 +43,12 @@ namespace Ditto
             if (rootSection)
                 log.AppendLine();
         }
+
+        public static TOptions Bind<TOptions>(this IConfiguration configuration, string sectionName) where TOptions : class, new()
+        {
+            var options = new TOptions();
+            configuration.Bind(sectionName, options);
+            return options;
+        }
     }
 }

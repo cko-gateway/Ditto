@@ -16,7 +16,7 @@ namespace Ditto
             services.AddSingleton<IConfiguration>(configuration);
             
             // Binds the "Settings" section from appsettings.json to AppSettings
-            var settings = Bind<AppSettings>(configuration, "Settings");
+            var settings = configuration.Bind<AppSettings>("Settings");
             services.AddSingleton<AppSettings>(settings);
             services.AddSingleton<AppService>();
 
@@ -36,19 +36,6 @@ namespace Ditto
             }
 
             return services;
-        }
-        
-        /// <summary>
-        /// Convenience method for binding configuration settings to strongly typed objects
-        /// </summary>
-        /// <param name="configuration">The configuration to use for binding</param>
-        /// <param name="key">The configuration section to bind from</param>
-        /// <returns>The created settings object bound from the configuration</returns>
-        private static TSettings Bind<TSettings>(IConfiguration configuration, string key) where TSettings : new()
-        {
-            var settings = new TSettings();
-            configuration.Bind(key, settings);
-            return settings;
         }
     }
 }

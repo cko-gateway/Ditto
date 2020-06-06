@@ -11,6 +11,8 @@ services:
       - eventstore-source
       - eventstore-dest
     container_name: Ditto
+    ports:
+      - "5000:5000"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - Ditto_Settings__SourceEventStoreConnectionString=ConnectTo=tcp://admin:changeit@eventstore-source:1113;
