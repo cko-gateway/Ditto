@@ -113,7 +113,10 @@ namespace Ditto
         private Func<EventStorePersistentSubscriptionBase, ResolvedEvent, Task> OnEventAppeared(ICompetingConsumer consumer)
         {
             return async (sub, e) =>
-            {
+            {               
+                double delaySeconds = (DateTime.UtcNow - e.Event.Created).TotalSeconds;
+
+                DittoMetrics.ReplicationLatency.WithConsumerLabels(consumer).Observe(delaySeconds);
                 DittoMetrics.ReceivedEvents.WithConsumerLabels(consumer).Inc();
                 DittoMetrics.CurrentEvent.WithConsumerLabels(consumer).Set(e.OriginalEventNumber);
                 
