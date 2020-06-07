@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
+using Prometheus;
 using SerilogTimings.Extensions;
 
 namespace Ditto
@@ -32,7 +33,7 @@ namespace Ditto
         public async Task ConsumeAsync(string eventType, ResolvedEvent resolvedEvent)
         {
             if (string.IsNullOrWhiteSpace(eventType)) throw new ArgumentException("Event type required", nameof(eventType));
-            
+
             var eventData = new EventData(
                 resolvedEvent.Event.EventId,
                 resolvedEvent.Event.EventType,
@@ -46,10 +47,11 @@ namespace Ditto
                 resolvedEvent.Event.EventNumber,
                 resolvedEvent.Event.EventStreamId,
                 resolvedEvent.OriginalEventNumber))
+            using (DittoMetrics.IODuration.WithIOLabels("eventstore", "ditto-destination", "append_to_stream").NewTimer())
             {
                 await _connection.AppendToStreamAsync(
-                    resolvedEvent.Event.EventStreamId, 
-                    _settings.SkipVersionCheck ? ExpectedVersion.Any : resolvedEvent.Event.EventNumber - 1, 
+                    resolvedEvent.Event.EventStreamId,
+                    _settings.SkipVersionCheck ? ExpectedVersion.Any : resolvedEvent.Event.EventNumber - 1,
                     eventData
                 );
             }

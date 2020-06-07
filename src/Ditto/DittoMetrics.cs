@@ -4,6 +4,7 @@ namespace Ditto
 {
     public static class DittoMetrics
     {
+        private const string AppName = "ditto";
         private static string[] ConsumerLabels = new[] { "app", "stream", "group" };
         
         public static readonly Counter ReceivedEvents = Metrics.CreateCounter("ditto_events_received_total", "Number of events received", ConsumerLabels);
@@ -24,13 +25,28 @@ namespace Ditto
                 LabelNames = ConsumerLabels
             });
 
+        public static readonly Summary IODuration = Metrics
+            .CreateSummary("ditto_io_duration_seconds", "The time it takes for an IO operation to complete", new SummaryConfiguration
+            {
+                Objectives = new[]
+                {
+                    new QuantileEpsilonPair(0.75, 0.05),
+                    new QuantileEpsilonPair(0.95, 0.01),
+                    new QuantileEpsilonPair(0.99, 0.005),
+                },
+                LabelNames = new[] { "app", "type", "resource", "operation" }
+            });
+
         public static Counter.Child WithConsumerLabels(this Counter counter, ICompetingConsumer consumer)
-            => counter.WithLabels("ditto", consumer.StreamName, consumer.GroupName);
+            => counter.WithLabels(AppName, consumer.StreamName, consumer.GroupName);
 
         public static Gauge.Child WithConsumerLabels(this Gauge counter, ICompetingConsumer consumer)
-            => counter.WithLabels("ditto", consumer.StreamName, consumer.GroupName);
+            => counter.WithLabels(AppName, consumer.StreamName, consumer.GroupName);
 
         public static Summary.Child WithConsumerLabels(this Summary summary, ICompetingConsumer consumer)
-            => summary.WithLabels("ditto", consumer.StreamName, consumer.GroupName);
+            => summary.WithLabels(AppName, consumer.StreamName, consumer.GroupName);
+
+        public static Summary.Child WithIOLabels(this Summary summary, string type, string resource, string operation)
+            => summary.WithLabels(AppName, type, resource, operation);
     }
 }
