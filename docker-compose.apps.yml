@@ -20,7 +20,7 @@ services:
       - Ditto_Settings__Streams__0__StreamName=$$ce-customer
       - Ditto_Settings__Streams__0__GroupName=ditto-customer
       - Ditto_Settings__ReplicationThrottleInterval=0 # Time in milliseconds to wait between writes
+      - Ditto_Settings__TimeToLive=00:01:00 # Ref https://docs.microsoft.com/en-us/dotnet/standard/base-types/standard-timespan-format-strings
       - Ditto_Serilog__WriteTo__0__Args:restrictedToMinimumLevel=Debug
       - Ditto_Serilog__WriteTo__1__Args:serverUrl=http://ditto-seq:5341
       - Ditto_Serilog__WriteTo__1__Args:apiKey=xxx
-    

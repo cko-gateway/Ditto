@@ -38,6 +38,11 @@ namespace Ditto
         /// </summary>
         public bool SkipVersionCheck { get; set; }
 
+        /// <summary>
+        /// Gets or sets the time-to-live on new streams that are replicated
+        /// </summary>
+        public TimeSpan? TimeToLive { get; set; }
+
         public class Subscription
         {
             public string StreamName { get; set; }

@@ -42,6 +42,8 @@ namespace Ditto
                 resolvedEvent.Event.Metadata
             );
 
+            WriteResult result = default;
+
             using (_logger.TimeOperation("Replicating {EventType} #{EventNumber} from {StreamName} (Original Event: #{OriginalEventNumber})",
                 resolvedEvent.Event.EventType,
                 resolvedEvent.Event.EventNumber,
@@ -49,15 +51,30 @@ namespace Ditto
                 resolvedEvent.OriginalEventNumber))
             using (DittoMetrics.IODuration.WithIOLabels("eventstore", "ditto-destination", "append_to_stream").NewTimer())
             {
-                await _connection.AppendToStreamAsync(
+                result = await _connection.AppendToStreamAsync(
                     resolvedEvent.Event.EventStreamId,
                     _settings.SkipVersionCheck ? ExpectedVersion.Any : resolvedEvent.Event.EventNumber - 1,
                     eventData
                 );
             }
 
+            if (_settings.TimeToLive.GetValueOrDefault().TotalMilliseconds > 0 && result.NextExpectedVersion == 0) // New stream created
+                await SetStreamMetadataAsync(resolvedEvent.Event.EventStreamId);
+
             if (_settings.ReplicationThrottleInterval.GetValueOrDefault() > 0)
                 Thread.Sleep(_settings.ReplicationThrottleInterval.Value);
+        }
+
+        private async Task SetStreamMetadataAsync(string stream)
+        {
+            using (_logger.TimeOperation("Setting TTL on stream {StreamName}", stream))
+            using (DittoMetrics.IODuration.WithIOLabels("eventstore", "ditto-destination", "set_stream_metadata").NewTimer())
+            {
+                StreamMetadata streamMetadata = StreamMetadata.Build()
+                    .SetMaxAge(_settings.TimeToLive.Value);
+                
+                await _connection.SetStreamMetadataAsync(stream, ExpectedVersion.Any, streamMetadata);
+            }
         }
     }
 }

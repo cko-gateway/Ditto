@@ -123,7 +123,7 @@ namespace Ditto
                 if (!e.IsResolved) // Handle deleted streams
                 {
                     DittoMetrics.UnresolvedEvents.WithConsumerLabels(consumer).Inc();
-                    sub.Fail(e, PersistentSubscriptionNakEventAction.Park, "Unresolved Event");
+                    sub.Fail(e, PersistentSubscriptionNakEventAction.Skip, "Unresolved Event");
                     return;
                 }
 
