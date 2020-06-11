@@ -68,7 +68,7 @@ namespace Ditto
 
         private async Task SetStreamMetadataAsync(string stream)
         {
-            using (_logger.TimeOperation("Setting TTL on stream {StreamName}", stream))
+            using (_logger.OperationAt(LogEventLevel.Debug).("Setting TTL on stream {StreamName}", stream))
             using (DittoMetrics.IODuration.WithIOLabels("eventstore", "ditto-destination", "set_stream_metadata").NewTimer())
             {
                 StreamMetadata streamMetadata = StreamMetadata.Build()
