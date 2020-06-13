@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using Prometheus;
+using Serilog.Events;
 using SerilogTimings.Extensions;
 
 namespace Ditto
@@ -44,7 +45,7 @@ namespace Ditto
 
             WriteResult result = default;
 
-            using (_logger.TimeOperation("Replicating {EventType} #{EventNumber} from {StreamName} (Original Event: #{OriginalEventNumber})",
+            using (_logger.OperationAt(LogEventLevel.Debug).Time("Replicating {EventType} #{EventNumber} from {StreamName} (Original Event: #{OriginalEventNumber})",
                 resolvedEvent.Event.EventType,
                 resolvedEvent.Event.EventNumber,
                 resolvedEvent.Event.EventStreamId,
@@ -67,7 +68,7 @@ namespace Ditto
 
         private async Task SetStreamMetadataAsync(string stream)
         {
-            using (_logger.TimeOperation("Setting TTL on stream {StreamName}", stream))
+            using (_logger.OperationAt(LogEventLevel.Debug).Time("Setting TTL on stream {StreamName}", stream))
             using (DittoMetrics.IODuration.WithIOLabels("eventstore", "ditto-destination", "set_stream_metadata").NewTimer())
             {
                 StreamMetadata streamMetadata = StreamMetadata.Build()
