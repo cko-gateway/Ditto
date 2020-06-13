@@ -71,7 +71,7 @@ namespace Ditto
 
                 if (metrics.Enabled)
                 {
-                    _logger.Information("Starting metrics server at {MetricsUrl}:{MetricsPort", metrics.Path, metrics.Port);
+                    _logger.Information("Starting metrics server at {MetricsUrl}:{MetricsPort}", metrics.Path, metrics.Port);
                     _metricsServer = new MetricServer(port: metrics.Port, url: metrics.Path);
                     _metricsServer.Start();
                 }
