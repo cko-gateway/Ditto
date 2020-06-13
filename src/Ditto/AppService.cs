@@ -20,7 +20,7 @@ namespace Ditto
         /// <param name="consumerManager"></param>
         public AppService(ILogger logger, IConsumerManager consumerManager)
         {
-            _logger = logger ?? throw new System.ArgumentNullException(nameof(logger));
+            _logger = logger?.ForContext<AppService>() ?? throw new System.ArgumentNullException(nameof(logger));
             _consumerManager = consumerManager ?? throw new System.ArgumentNullException(nameof(consumerManager));
         }
 

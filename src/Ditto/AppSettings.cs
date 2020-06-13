@@ -43,6 +43,11 @@ namespace Ditto
         /// </summary>
         public TimeSpan? TimeToLive { get; set; }
 
+        /// <summary>
+        /// Gets or sets whether to only read from the target cluster and skip replication for testing purposes
+        /// </summary>
+        public bool ReadOnly { get; set; }
+
         public class Subscription
         {
             public string StreamName { get; set; }

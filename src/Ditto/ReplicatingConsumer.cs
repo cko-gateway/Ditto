@@ -16,6 +16,8 @@ namespace Ditto
         private readonly IEventStoreConnection _connection;
         private readonly Serilog.ILogger _logger;
         private readonly AppSettings _settings;
+        private readonly StreamMetadata _streamMetadata;
+        private readonly bool _ttl;
 
         public ReplicatingConsumer(
             IEventStoreConnection connection, Serilog.ILogger logger, AppSettings settings, string streamName, string groupName)
@@ -25,6 +27,12 @@ namespace Ditto
             _settings = settings ?? throw new ArgumentNullException(nameof(settings));
             StreamName = streamName ?? throw new ArgumentNullException(nameof(streamName));
             GroupName = groupName ?? throw new ArgumentNullException(nameof(groupName));
+
+            if (_settings.TimeToLive.GetValueOrDefault().TotalMilliseconds > 0)
+            {
+                _streamMetadata = StreamMetadata.Build().SetMaxAge(_settings.TimeToLive.Value);
+                _ttl = true;
+            }
         }
 
         public string StreamName { get; }
@@ -34,6 +42,18 @@ namespace Ditto
         public async Task ConsumeAsync(string eventType, ResolvedEvent resolvedEvent)
         {
             if (string.IsNullOrWhiteSpace(eventType)) throw new ArgumentException("Event type required", nameof(eventType));
+
+            if (_settings.ReadOnly)
+            {
+                _logger.Debug("Received {EventType} #{EventNumber} from {StreamName} (Original Event: #{OriginalEventNumber})",
+                    resolvedEvent.Event.EventType,
+                    resolvedEvent.Event.EventNumber,
+                    resolvedEvent.Event.EventStreamId,
+                    resolvedEvent.OriginalEventNumber
+                );
+
+                return;
+            }
 
             var eventData = new EventData(
                 resolvedEvent.Event.EventId,
@@ -59,7 +79,7 @@ namespace Ditto
                 );
             }
 
-            if (_settings.TimeToLive.GetValueOrDefault().TotalMilliseconds > 0 && result.NextExpectedVersion == 0) // New stream created
+            if (_ttl && result.NextExpectedVersion == 0) // New stream created
                 await SetStreamMetadataAsync(resolvedEvent.Event.EventStreamId);
 
             if (_settings.ReplicationThrottleInterval.GetValueOrDefault() > 0)
@@ -71,10 +91,7 @@ namespace Ditto
             using (_logger.OperationAt(LogEventLevel.Debug).Time("Setting TTL on stream {StreamName}", stream))
             using (DittoMetrics.IODuration.WithIOLabels("eventstore", "ditto-destination", "set_stream_metadata").NewTimer())
             {
-                StreamMetadata streamMetadata = StreamMetadata.Build()
-                    .SetMaxAge(_settings.TimeToLive.Value);
-                
-                await _connection.SetStreamMetadataAsync(stream, ExpectedVersion.Any, streamMetadata);
+                await _connection.SetStreamMetadataAsync(stream, ExpectedVersion.Any, _streamMetadata);
             }
         }
     }
