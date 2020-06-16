@@ -114,9 +114,6 @@ namespace Ditto
         {
             return async (sub, e) =>
             {               
-                double delaySeconds = (DateTime.UtcNow - e.Event.Created).TotalSeconds;
-
-                DittoMetrics.ReplicationLatency.WithConsumerLabels(consumer).Observe(delaySeconds);
                 DittoMetrics.ReceivedEvents.WithConsumerLabels(consumer).Inc();
                 DittoMetrics.CurrentEvent.WithConsumerLabels(consumer).Set(e.OriginalEventNumber);
                 
@@ -126,6 +123,10 @@ namespace Ditto
                     sub.Fail(e, PersistentSubscriptionNakEventAction.Skip, "Unresolved Event");
                     return;
                 }
+
+                double delaySeconds = (DateTime.UtcNow - e.Event.Created).TotalSeconds;
+
+                DittoMetrics.ReplicationLatency.WithConsumerLabels(consumer).Observe(delaySeconds);
 
                 if (!consumer.CanConsume(e.Event.EventType))
                 {
