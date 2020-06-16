@@ -119,6 +119,9 @@ namespace Ditto
                 
                 if (!e.IsResolved) // Handle deleted streams
                 {
+                    _logger.Information("Event #{EventNumber} from {StreamName} is not resolved. Skipping", e.OriginalEventNumber, consumer.StreamName);
+                    
+                    // log
                     DittoMetrics.UnresolvedEvents.WithConsumerLabels(consumer).Inc();
                     sub.Fail(e, PersistentSubscriptionNakEventAction.Skip, "Unresolved Event");
                     return;
@@ -130,6 +133,8 @@ namespace Ditto
 
                 if (!consumer.CanConsume(e.Event.EventType))
                 {
+                    _logger.Information("Unable to consume {EventType} #{EventNumber} from {StreamName}. Skipping", e.Event.EventType, e.OriginalEventNumber, consumer.StreamName);
+
                     DittoMetrics.SkippedEvents.WithConsumerLabels(consumer).Inc();
                     sub.Fail(e, PersistentSubscriptionNakEventAction.Skip, "Cannot consume");
                     return;
