@@ -172,7 +172,8 @@ namespace Ditto
                     }
                     catch (Exception ex)
                     {
-                        _logger.Error(ex, "Error stopping persistent subscription following subscription dropped with reason {Reason}", reason);
+                        _logger.Error(ex, "Error stopping persistent subscription to {StreamName} in group {GroupName} with reason {Reason}", 
+                            runningConsumer.Consumer.StreamName, runningConsumer.Consumer.GroupName, reason.ToString());
                     }
                 }
 
@@ -182,7 +183,7 @@ namespace Ditto
                         GetConsumerId(runningConsumer.Consumer), runningConsumer.Consumer.StreamName, runningConsumer.Consumer.GroupName, reason.ToString());
 
                     if (reason == SubscriptionDropReason.EventHandlerException)
-                        _logger.Fatal("Subscription to {StreamName} in group {GroupName} has been dropped due to an exception. Please restart", runningConsumer.Consumer.StreamName, runningConsumer.Consumer.GroupName);
+                        _logger.Fatal(exception, "Subscription to {StreamName} in group {GroupName} has been dropped due to an exception. Please restart", runningConsumer.Consumer.StreamName, runningConsumer.Consumer.GroupName);
                     else
                         StartConsumerAsync(runningConsumer).GetAwaiter().GetResult();
                 }
