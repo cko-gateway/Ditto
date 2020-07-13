@@ -1,4 +1,4 @@
-namespace Ditto
+namespace Ditto.Core
 {
     public class MetricsSettings
     {

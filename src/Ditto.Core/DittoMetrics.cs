@@ -1,6 +1,6 @@
 using Prometheus;
 
-namespace Ditto
+namespace Ditto.Core
 {
     public static class DittoMetrics
     {

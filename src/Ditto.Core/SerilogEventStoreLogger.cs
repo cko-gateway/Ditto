@@ -1,7 +1,7 @@
 using System;
 using Serilog;
 
-namespace Ditto
+namespace Ditto.Core
 {
     /// <summary>
     /// Event Store logger that uses Serilog

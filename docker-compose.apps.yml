@@ -2,7 +2,7 @@ version: "3"
 
 services:
 
-  consumer:
+  ditto-consumer:
     build:
       context: .
       dockerfile: ./src/Ditto/Dockerfile
@@ -10,7 +10,7 @@ services:
       - seq
       - eventstore-source
       - eventstore-dest
-    container_name: Ditto
+    container_name: ditto-consumer
     ports:
       - "5000:5000"
     environment:
@@ -24,3 +24,30 @@ services:
       - Ditto_Serilog__WriteTo__0__Args:restrictedToMinimumLevel=Debug
       - Ditto_Serilog__WriteTo__1__Args:serverUrl=http://ditto-seq:5341
       - Ditto_Serilog__WriteTo__1__Args:apiKey=xxx
+
+  ditto-kinesis-consumer:
+    build:
+      context: .
+      dockerfile: ./src/Ditto.Kinesis/Dockerfile
+    depends_on:
+      - seq
+      - eventstore-source
+      - eventstore-dest
+    container_name: ditto-kinesis-consumer
+    ports:
+      - "5002:5000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - Ditto_Settings__SourceEventStoreConnectionString=ConnectTo=tcp://admin:changeit@eventstore-source:1113;
+      - Ditto_Settings__Streams__0__StreamName=$$ce-customer
+      - Ditto_Settings__Streams__0__GroupName=ditto-kinesis-customer
+      - Ditto_Kinesis__StreamName=ditto
+      - Ditto_Serilog__WriteTo__0__Args:restrictedToMinimumLevel=Debug
+      - Ditto_Serilog__WriteTo__1__Args:serverUrl=http://ditto-seq:5341
+      - Ditto_Serilog__WriteTo__1__Args:apiKey=xxx
+      - Ditto_Aws__ServiceURL=http://localstack:4566/
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_KEY=test
+      - AWS_EC2_METADATA_DISABLED=true
+      - AWS_DEFAULT_REGION=eu-west-1
+      - AWS_RETRY_MODE=Standard

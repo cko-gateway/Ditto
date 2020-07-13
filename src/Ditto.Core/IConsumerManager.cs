@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-namespace Ditto
+namespace Ditto.Core
 {
     public interface IConsumerManager
     {

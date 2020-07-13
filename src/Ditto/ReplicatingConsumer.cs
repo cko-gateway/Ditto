@@ -1,6 +1,6 @@
 using System;
-using System.Threading;
 using System.Threading.Tasks;
+using Ditto.Core;
 using EventStore.ClientAPI;
 using Prometheus;
 using Serilog.Events;
@@ -15,12 +15,12 @@ namespace Ditto
     {
         private readonly IEventStoreConnection _connection;
         private readonly Serilog.ILogger _logger;
-        private readonly AppSettings _settings;
+        private readonly DittoSettings _settings;
         private readonly StreamMetadata _streamMetadata;
         private readonly bool _ttl;
 
         public ReplicatingConsumer(
-            IEventStoreConnection connection, Serilog.ILogger logger, AppSettings settings, string streamName, string groupName)
+            IEventStoreConnection connection, Serilog.ILogger logger, DittoSettings settings, string streamName, string groupName)
         {
             _connection = connection ?? throw new ArgumentNullException(nameof(connection));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -83,7 +83,7 @@ namespace Ditto
                 await SetStreamMetadataAsync(resolvedEvent.Event.EventStreamId);
 
             if (_settings.ReplicationThrottleInterval.GetValueOrDefault() > 0)
-                Thread.Sleep(_settings.ReplicationThrottleInterval.Value);
+                await Task.Delay(_settings.ReplicationThrottleInterval.Value);
         }
 
         private async Task SetStreamMetadataAsync(string stream)

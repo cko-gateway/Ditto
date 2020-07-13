@@ -2,7 +2,7 @@ using System;
 using EventStore.ClientAPI;
 using ILogger = Serilog.ILogger;
 
-namespace Ditto
+namespace Ditto.Core
 {
     public class ConnectionFactory
     {

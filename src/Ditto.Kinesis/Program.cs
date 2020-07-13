@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Prometheus;
 using Serilog;
 
-namespace Ditto
+namespace Ditto.Kinesis
 {
     /// <summary>
     /// Application bootstrapper

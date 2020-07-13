@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using Ditto.Core;
 using Serilog;
 
-namespace Ditto
+namespace Ditto.Kinesis
 {
     /// <summary>
     /// The entry point for your application logic

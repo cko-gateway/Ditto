@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
 
-namespace Ditto
+namespace Ditto.Core
 {
     public interface ICompetingConsumer
     {

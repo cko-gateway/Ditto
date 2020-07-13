@@ -31,6 +31,21 @@ services:
       - "3113:3113"
       - "4113:4113"
 
+  localstack:
+    image: localstack/localstack
+    container_name: ditto-localstack
+    ports:
+      - "4566-4599:4566-4599" # ports of the different services
+      - "8080:8080"
+    environment:
+      - SERVICES=kinesis # a list of desired services you want to use.
+      - DEFAULT_REGION=eu-west-1 # This is the region where your localstack mocks to be running
+      - DATA_DIR=/tmp/localstack/data
+      - LAMBDA_EXECUTOR=local
+      - KINESIS_ERROR_PROBABILITY=0.5
+    volumes:
+      - ./docker-setup/localstack/:/docker-entrypoint-initaws.d/
+
   seq:
     image: datalust/seq:latest
     container_name: ditto-seq
@@ -38,28 +53,3 @@ services:
       - ACCEPT_EULA=Y
     ports:
       - 5341:80 
-
-  # consumer:
-  #   build:
-  #     context: ./src/Ditto
-  #     dockerfile: ./Dockerfile
-  #   depends_on:
-  #     - seq
-  #     - eventstore-source
-  #     - eventstore-dest
-  #   container_name: Ditto
-  #   environment:
-  #     - ASPNETCORE_ENVIRONMENT=Development
-  #     - Ditto_Settings:SourceEventStoreConnectionString=ConnectTo=tcp://admin:changeit@eventstore-source:1113;
-  #     - Ditto_Settings:DestinationEventStoreConnectionString=ConnectTo=tcp://admin:changeit@eventstore-dest:3113;
-  #     - Ditto_Settings:StreamIdentifiers=$$ce-emails;
-  #     - Ditto_Settings:CheckpointManagerRetryCount=5
-  #     - Ditto_Settings:CheckpointManagerRetryInterval=1000
-  #     - Ditto_Settings:CheckpointSavingInterval=5000
-  #     - Ditto_Settings:ReplicationThrottleInterval=0 # Time in milliseconds to wait between writes
-  #     # Change this to "Error" in production:
-  #     - Ditto_Serilog:WriteTo:0:Args:restrictedToMinimumLevel=Debug
-  #     # Point to the remote Seq instance
-  #     - Ditto_Serilog:WriteTo:1:Args:serverUrl=http://ditto-seq:5341
-  #     - Ditto_Serilog:WriteTo:1:Args:apiKey=xxx
-    

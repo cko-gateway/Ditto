@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": ".NET Core Launch (console)",
+            "name": "Launch Ditto",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
@@ -15,6 +15,20 @@
             "console": "internalConsole",
             "stopAtEntry": false
         },
+        {
+          "name": "Launch Ditto Kinesis",
+          "type": "coreclr",
+          "request": "launch",
+          "preLaunchTask": "build",
+          "program": "${workspaceFolder}/src/Ditto.Kinesis/bin/Debug/netcoreapp3.1/Ditto.Kinesis.dll",
+          "args": [],
+          "cwd": "${workspaceFolder}/src/Ditto.Kinesis",
+          "console": "internalConsole",
+          "stopAtEntry": false,
+          "env": {
+            "AWS_RETRY_MODE": "Standard"
+          }
+      },
         {
             "name": ".NET Core Attach",
             "type": "coreclr",

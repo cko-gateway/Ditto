@@ -2,7 +2,7 @@ using System;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 
-namespace Ditto
+namespace Ditto.Core
 {
     /// <summary>
     /// Extensions for <see cref="Microsoft.Extensions.Configuration.IConfiguration"/>.

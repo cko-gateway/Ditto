@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
 
-namespace Ditto
+namespace Ditto.Core
 {
     /// <summary>
     /// Manages the lifetime of multiple Event Store competing consumers
@@ -16,7 +16,7 @@ namespace Ditto
         private static SubscriptionDropReason[] SkipStopReasons = new[] { SubscriptionDropReason.ConnectionClosed, SubscriptionDropReason.UserInitiated };
 
         private readonly IEventStoreConnection _connection;
-        private readonly AppSettings _settings;
+        private readonly DittoSettings _settings;
         private readonly Serilog.ILogger _logger;
         private readonly List<RunningConsumer> _consumers;
         private bool _stopping;
@@ -31,7 +31,7 @@ namespace Ditto
         public CompetingConsumerManager(
             IEventStoreConnection connection,
             IEnumerable<ICompetingConsumer> consumers,
-            AppSettings settings,
+            DittoSettings settings,
             Serilog.ILogger logger)
         {
             _connection = connection ?? throw new System.ArgumentNullException(nameof(connection));
