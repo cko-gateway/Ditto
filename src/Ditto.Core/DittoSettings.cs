@@ -47,6 +47,11 @@ namespace Ditto.Core
         /// Gets or sets whether to only read from the target cluster and skip replication for testing purposes
         /// </summary>
         public bool ReadOnly { get; set; }
+        
+        /// <summary>
+        /// Gets or sets at which event number to stop processing
+        /// </summary>
+        public int? EventNumberToStopAt { get; set; }
 
         public class Subscription
         {
