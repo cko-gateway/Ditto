@@ -45,7 +45,7 @@ namespace Ditto
 
             if (_settings.EventNumberToStopAt.HasValue && resolvedEvent.OriginalEventNumber > _settings.EventNumberToStopAt.Value)
             {
-                _logger.Error("Please stop ditto as it has reached the event number to stop at. Skipping processing." +
+                _logger.Error("Please stop ditto as it has reached the event number to stop at. Skipping processing. " +
                               "EventNumber to stop at {eventNumber}. ResolvedEventNumber: {resolvedEventVersion}. StreamId: {streamId}",
                     _settings.EventNumberToStopAt, resolvedEvent.OriginalEventNumber, resolvedEvent.Event.EventStreamId);
                 return;
