@@ -13,5 +13,9 @@ namespace Ditto.Sqs.Consumer
         /// The amount of times to retry a SQS message if it cannot be handled
         /// </summary>
         public int RetryAttempts { get; set; } = 5;
+
+        public int WithMaxInFlightMessages { get; set; } = 75;
+        
+        public int ReaderCount { get; set; } = 1;
     }
 }

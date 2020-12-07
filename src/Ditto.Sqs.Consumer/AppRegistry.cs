@@ -21,6 +21,9 @@ namespace Ditto.Sqs.Consumer
             var settings = configuration.Bind<DittoSettings>("Settings");
             services.AddSingleton(settings);
 
+            var consumerOptions = configuration.GetSection("Consumer").Get<ConsumerOptions>();
+            services.AddSingleton(consumerOptions);
+
             services.AddSqsConsumers(builder =>
                 builder
                     .FromConfiguration(configuration)
@@ -28,14 +31,16 @@ namespace Ditto.Sqs.Consumer
                         consume => consume
                             .IgnoreUnregisteredTypes()
                             .TreatUnregisteredTypesAsHandled()
-                            .WithHandler<EventWrapper, SqsEventHandler>(nameof(EventWrapper)))
+                            .WithHandler<EventWrapper, SqsEventHandler>(nameof(EventWrapper))
+                            .WithReaderCount(1)
+                            .WithMaxInFlightMessages(consumerOptions.WithMaxInFlightMessages))
                             .Build()
                 );
 
             services.AddSingleton<AppService>();
 
             services.AddSingleton<ILogger>(Log.Logger);
-            services.Configure<ConsumerOptions>(configuration.GetSection("Consumer"));
+            
             services.AddSingleton<IEventStoreConnection>(provider
                 => ConnectionFactory.CreateEventStoreConnection(provider.GetService<ILogger>(), settings.SourceEventStoreConnectionString, "Ditto:Source"));
 
