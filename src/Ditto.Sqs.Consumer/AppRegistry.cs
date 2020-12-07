@@ -44,6 +44,8 @@ namespace Ditto.Sqs.Consumer
             services.AddSingleton<IEventStoreConnection>(provider
                 => ConnectionFactory.CreateEventStoreConnection(provider.GetService<ILogger>(), settings.SourceEventStoreConnectionString, "Ditto:Source"));
 
+            services.AddSingleton<IEventStoreWriter, EventStoreWriter>();
+
             return services;
         }
     }
