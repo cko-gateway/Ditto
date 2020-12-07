@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 
-namespace Ditto.Kinesis
+namespace Ditto.Sqs.Consumer
 {
     /// <summary>
     ///     Default <see cref="SerializerSettings"/> used across the project. 

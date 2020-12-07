@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using Ditto.Core;
 using Serilog;
 
-namespace Ditto.Kinesis
+namespace Ditto.Sqs.Consumer
 {
     /// <summary>
     /// The entry point for your application logic

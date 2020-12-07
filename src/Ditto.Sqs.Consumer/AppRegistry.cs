@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using ILogger = Serilog.ILogger;
 
-namespace Ditto.Kinesis
+namespace Ditto.Sqs.Consumer
 {
     /// <summary>
     /// Registry of application dependencies used to configure StructureMap containers

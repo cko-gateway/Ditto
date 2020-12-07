@@ -1,7 +1,7 @@
 using System;
 using Newtonsoft.Json;
 
-namespace Ditto.Kinesis
+namespace Ditto.Sqs.Consumer
 {
     /// <summary>
     /// JSON converter that treats a property as a raw JSON string

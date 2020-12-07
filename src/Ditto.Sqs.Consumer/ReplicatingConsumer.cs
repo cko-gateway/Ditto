@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Amazon.Kinesis;
 using Amazon.Kinesis.Model;
 using Ditto.Core;
+using Ditto.Sqs.Consumer;
 using EventStore.ClientAPI;
 using Newtonsoft.Json;
 using Prometheus;
@@ -12,9 +13,11 @@ using Serilog.Events;
 using SerilogTimings.Extensions;
 using ILogger = Serilog.ILogger;
 
-namespace Ditto.Kinesis
+namespace Ditto.Sqs.Consumer
 {
-    /// <summary>
+}
+
+/// <summary>
     /// Stream consumer that replicates to the destination event store
     /// </summary>
     public class ReplicatingConsumer : ICompetingConsumer
@@ -104,26 +107,4 @@ namespace Ditto.Kinesis
             string json = JsonConvert.SerializeObject(wrapper, Formatting.None, SerializerSettings.Default);
             return new MemoryStream(Encoding.UTF8.GetBytes(json));
         }
-
-        private class EventWrapper
-        {
-            public EventWrapper()
-            {
-                ReplicatedOn = DateTime.UtcNow;
-            }
-
-            public string StreamId { get; set; }
-            public Guid EventId { get; set; }
-            public long EventNumber { get; set; }
-            public string EventType { get; set; }
-            public DateTime EventTimestamp { get; set; }
-            public DateTime ReplicatedOn { get; set; }
-
-            [JsonConverter(typeof(JsonStringConverter))]
-            public string Data { get; set; }
-
-            [JsonConverter(typeof(JsonStringConverter))]
-            public string Metadata { get; set; }
-        }
-    }
 }
