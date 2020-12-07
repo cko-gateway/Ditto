@@ -1,4 +1,5 @@
-﻿using EventStore.ClientAPI;
+﻿using Ditto.Core;
+using EventStore.ClientAPI;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -8,19 +9,27 @@ namespace Ditto.Sqs.Consumer
 {
     public class EventStoreWriter : IEventStoreWriter
     {
-        private readonly IEventStoreConnection _eventStoreConnection;
+        private readonly IEventStoreConnectionProvider _eventStoreConnectionProvider;
         private readonly Serilog.ILogger _logger;
+        private readonly DittoSettings _dittoSettings;
 
-        public EventStoreWriter(IEventStoreConnection eventStoreConnection, Serilog.ILogger logger)
+        private static readonly string _connectionName = "Ditto:Source";
+        private IEventStoreConnection _eventStoreConnection = null;
+
+        public EventStoreWriter(IEventStoreConnectionProvider eventStoreConnectionProvider, Serilog.ILogger logger, DittoSettings dittoSettings)
         {
-            _eventStoreConnection = eventStoreConnection ?? throw new ArgumentNullException(nameof(eventStoreConnection));
+            _eventStoreConnectionProvider = eventStoreConnectionProvider ?? throw new ArgumentNullException(nameof(eventStoreConnectionProvider));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _dittoSettings = dittoSettings ?? throw new ArgumentNullException(nameof(dittoSettings));
         }
 
         public async Task SaveAsync(SqsEvent sqsEvent, CancellationToken cancellationToken)
         {
             if (sqsEvent == null)
                 throw new ArgumentNullException(nameof(sqsEvent));
+
+            if (_eventStoreConnection == null)
+                _eventStoreConnection = await _eventStoreConnectionProvider.OpenAsync(_dittoSettings.SourceEventStoreConnectionString, _connectionName, cancellationToken);
 
             try
             {

@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using App.Metrics;
+using Ditto.Core;
 using Gateway.Extensions.Sqs.Consumers;
 using Serilog;
 using Serilog.Context;
@@ -16,6 +17,7 @@ namespace Ditto.Sqs.Consumer
         private readonly IMetrics _metrics;
         private readonly IEventStoreWriter _eventStore;
         private readonly ConsumerOptions _consumerOptions;
+        private readonly IEventStoreConnectionProvider _eventStoreConnectionProvider;
 
         public SqsEventHandler(ILogger logger, IDiagnosticContext diagnosticContext, IMetrics metrics, IEventStoreWriter eventStore, ConsumerOptions consumerOptions)
         {
