@@ -1,9 +1,12 @@
 {
 	"profiles": {
-		"Ditto.Kinesis": {
+		"Ditto.Sqs": {
 			"commandName": "Project",
 			"environmentVariables": {
-				"ASPNETCORE_ENVIRONMENT": "Development"
+				"ASPNETCORE_ENVIRONMENT": "Development",
+        "AWS_DEFAULT_REGION":"eu-west-1",
+        "AWS_ACCESS_KEY_ID":"test",
+        "AWS_SECRET_KEY":"test"
 			}
 		}
 	}

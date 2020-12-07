@@ -1,33 +1,39 @@
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
-using Amazon.Kinesis;
-using Amazon.Kinesis.Model;
+using Amazon.Auth.AccessControlPolicy;
+using Amazon.SQS;
+using Amazon.SQS.Model;
 using Ditto.Core;
 using EventStore.ClientAPI;
 using Newtonsoft.Json;
 using Prometheus;
+using Serilog.Context;
 using Serilog.Events;
 using SerilogTimings.Extensions;
 using ILogger = Serilog.ILogger;
 
-namespace Ditto.Kinesis
+namespace Ditto.Sqs
 {
     /// <summary>
     /// Stream consumer that replicates to the destination event store
     /// </summary>
     public class ReplicatingConsumer : ICompetingConsumer
     {
-        private readonly IAmazonKinesis _kinesis;
-        private readonly KinesisSettings _kinesisSettings;
+        private readonly IAmazonSQS _sqs;
+        private readonly SqsSettings _sqsSettings;
         private readonly Serilog.ILogger _logger;
         private readonly DittoSettings _dittoSettings;
 
-        public ReplicatingConsumer(IAmazonKinesis kinesis, KinesisSettings kinesisSettings, DittoSettings dittoSettings, ILogger logger, string streamName, string groupName)
+        public ReplicatingConsumer(IAmazonSQS sqs, SqsSettings sqsSettings, DittoSettings dittoSettings, ILogger logger, string streamName, string groupName)
         {
-            _kinesis = kinesis ?? throw new ArgumentNullException(nameof(kinesis));
-            _kinesisSettings = kinesisSettings ?? throw new ArgumentNullException(nameof(kinesisSettings));
+            _sqs = sqs ?? throw new ArgumentNullException(nameof(sqs));
+            _sqsSettings = sqsSettings ?? throw new ArgumentNullException(nameof(sqsSettings));
             _dittoSettings = dittoSettings ?? throw new ArgumentNullException(nameof(dittoSettings));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
@@ -55,28 +61,24 @@ namespace Ditto.Kinesis
                 return;
             }
 
-            var request = new PutRecordRequest
+            var request = new SendMessageRequest
             {
-                StreamName = _kinesisSettings.StreamName,
-                PartitionKey = resolvedEvent.Event.EventStreamId,
-                Data = CreateDataStream(resolvedEvent)
+                QueueUrl = _sqsSettings.QueueUrl,
+                MessageBody = CreateDataStream(resolvedEvent),
             };
-
-            using (_logger.OperationAt(LogEventLevel.Debug).Time("Replicating {EventType} #{EventNumber} from {StreamName} (Original Event: #{OriginalEventNumber}) to Kinesis",
-                resolvedEvent.Event.EventType,
-                resolvedEvent.Event.EventNumber,
-                resolvedEvent.Event.EventStreamId,
-                resolvedEvent.OriginalEventNumber))
-            using (DittoMetrics.IODuration.WithIOLabels("kinesis", _kinesisSettings.StreamName, "put_record").NewTimer())
-            {
-                await _kinesis.PutRecordAsync(request);
-            }
-
-            if (_dittoSettings.ReplicationThrottleInterval.GetValueOrDefault() > 0)
-                await Task.Delay(_dittoSettings.ReplicationThrottleInterval.Value);
+         
+           using (_logger.OperationAt(LogEventLevel.Debug).Time("Replicating {EventType} #{EventNumber} from {StreamName} (Original Event: #{OriginalEventNumber}) to SQS",
+               resolvedEvent.Event.EventType,
+               resolvedEvent.Event.EventNumber,
+               resolvedEvent.Event.EventStreamId,
+               resolvedEvent.OriginalEventNumber))
+           using (DittoMetrics.IODuration.WithIOLabels("sqs", _sqsSettings.QueueName, "send_message").NewTimer())
+           {
+              await _sqs.SendMessageAsync(request);
+           }
         }
 
-        private MemoryStream CreateDataStream(ResolvedEvent resolvedEvent)
+        private string CreateDataStream(ResolvedEvent resolvedEvent)
         {
             string dataJson = default, metadataJson = default;
 
@@ -102,7 +104,8 @@ namespace Ditto.Kinesis
             };
 
             string json = JsonConvert.SerializeObject(wrapper, Formatting.None, SerializerSettings.Default);
-            return new MemoryStream(Encoding.UTF8.GetBytes(json));
+            return json;
+            //return new MemoryStream(Encoding.UTF8.GetBytes(json));
         }
 
         private class EventWrapper

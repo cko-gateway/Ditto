@@ -29,6 +29,12 @@ create_subscriptions() {
      -u admin:changeit \
      -d @subscription.json \
      http://127.0.0.1:2113/subscriptions/\$ce-customer/ditto-kinesis-customer)
+       
+  create_status=$(curl -s -o /dev/null -w "%{http_code}" -X PUT \
+     -H "Content-Type: application/json" \
+     -u admin:changeit \
+     -d @subscription.json \
+     http://127.0.0.1:2113/subscriptions/\$ce-customer/ditto-sqs-customer)
 
   if [[ $create_status -eq 401 ]]; then
     echo 1
