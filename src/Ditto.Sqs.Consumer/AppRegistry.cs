@@ -1,4 +1,5 @@
 using Ditto.Core;
+using Ditto.Sqs.Consumer.EventStore;
 using Gateway.Extensions.Sqs.Consumers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,6 +28,7 @@ namespace Ditto.Sqs.Consumer
                     .FromConfiguration(configuration)
                     .Consume("ditto",
                         consume => consume
+                            .CreateServiceScopePerHandler()
                             .IgnoreUnregisteredTypes()
                             .TreatUnregisteredTypesAsHandled()
                             .WithHandler<EventWrapper, SqsEventHandler>(nameof(EventWrapper))

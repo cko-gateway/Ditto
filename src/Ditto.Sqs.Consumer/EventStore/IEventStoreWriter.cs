@@ -1,10 +1,10 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Ditto.Sqs.Consumer
+namespace Ditto.Sqs.Consumer.EventStore
 {
     public interface IEventStoreWriter
     {
-        Task SaveAsync(SqsEvent sqsEvent, CancellationToken cancellationToken);
+        Task SaveAsync(Document document, CancellationToken cancellationToken);
     }
 }

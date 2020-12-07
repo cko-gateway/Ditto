@@ -1,11 +1,11 @@
-﻿using Ditto.Core;
-using EventStore.ClientAPI;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Ditto.Core;
+using EventStore.ClientAPI;
 
-namespace Ditto.Sqs.Consumer
+namespace Ditto.Sqs.Consumer.EventStore
 {
     public class EventStoreWriter : IEventStoreWriter
     {
@@ -13,8 +13,7 @@ namespace Ditto.Sqs.Consumer
         private readonly Serilog.ILogger _logger;
         private readonly DittoSettings _dittoSettings;
 
-        private static readonly string _connectionName = "Ditto:Source";
-        private IEventStoreConnection _eventStoreConnection = null;
+        private static readonly string ConnectionName = "Ditto:Destination";
 
         public EventStoreWriter(IEventStoreConnectionProvider eventStoreConnectionProvider, Serilog.ILogger logger, DittoSettings dittoSettings)
         {
@@ -23,20 +22,17 @@ namespace Ditto.Sqs.Consumer
             _dittoSettings = dittoSettings ?? throw new ArgumentNullException(nameof(dittoSettings));
         }
 
-        public async Task SaveAsync(SqsEvent sqsEvent, CancellationToken cancellationToken)
+        public async Task SaveAsync(Document document, CancellationToken cancellationToken)
         {
-            if (sqsEvent == null)
-                throw new ArgumentNullException(nameof(sqsEvent));
+            if (document == null)
+                throw new ArgumentNullException(nameof(document));
 
-            if (_eventStoreConnection == null)
-                _eventStoreConnection = await _eventStoreConnectionProvider.OpenAsync(_dittoSettings.SourceEventStoreConnectionString, _connectionName, cancellationToken);
+            var connection = await _eventStoreConnectionProvider.OpenAsync(_dittoSettings.DestinationEventStoreConnectionString, ConnectionName, cancellationToken);
 
             try
             {
-                _ = await _eventStoreConnection.AppendToStreamAsync(sqsEvent.StreamName, sqsEvent.EventNumber - 1, new List<EventData>
-                {
-                    new EventData(Guid.NewGuid(), sqsEvent.EventType, true, sqsEvent.Data, sqsEvent.Metadata)
-                });
+                var eventData = new EventData(document.EventId, document.EventType, true, document.Data, document.Metadata);
+                _ = await connection.AppendToStreamAsync(document.StreamName, document.EventNumber - 1, eventData);
             }
             catch (Exception ex)
             {
