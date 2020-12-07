@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using App.Metrics;
-using Ditto.Core;
+using Ditto.Sqs.Consumer.EventStore;
 using Gateway.Extensions.Sqs.Consumers;
 using Serilog;
 using Serilog.Context;
@@ -17,8 +17,7 @@ namespace Ditto.Sqs.Consumer
         private readonly IMetrics _metrics;
         private readonly IEventStoreWriter _eventStore;
         private readonly ConsumerOptions _consumerOptions;
-        private readonly IEventStoreConnectionProvider _eventStoreConnectionProvider;
-
+        
         public SqsEventHandler(ILogger logger, IDiagnosticContext diagnosticContext, IMetrics metrics, IEventStoreWriter eventStore, ConsumerOptions consumerOptions)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -43,7 +42,7 @@ namespace Ditto.Sqs.Consumer
 
             try
             {
-                await _eventStore.SaveAsync(SqsEvent.Map(message), cancellationToken);
+                await _eventStore.SaveAsync(Document.Map(message), cancellationToken);
             }
             catch (Exception ex)
             {
