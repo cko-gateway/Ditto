@@ -1,7 +1,6 @@
 using System;
 using Amazon.Kinesis;
 using Ditto.Core;
-using EventStore.ClientAPI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -16,7 +15,7 @@ namespace Ditto.Sqs.Consumer
     {
         public static ServiceCollection Register(IConfiguration configuration, ServiceCollection services)
         {
-            services.AddSingleton<IConfiguration>(configuration);
+            services.AddSingleton(configuration);
 
             services.AddDefaultAWSOptions(configuration.GetAWSOptions());
             services.AddAWSService<IAmazonKinesis>();
@@ -30,9 +29,9 @@ namespace Ditto.Sqs.Consumer
 
             services.AddSingleton<AppService>();
 
-            services.AddSingleton<ILogger>(Log.Logger);
+            services.AddSingleton(Log.Logger);
 
-            services.AddSingleton<IEventStoreConnection>(provider 
+            services.AddSingleton(provider 
                 => ConnectionFactory.CreateEventStoreConnection(provider.GetService<ILogger>(), settings.SourceEventStoreConnectionString, "Ditto:Source"));
 
             services.AddSingleton<IConsumerManager, CompetingConsumerManager>();
@@ -40,7 +39,7 @@ namespace Ditto.Sqs.Consumer
             // Register replicating consumers
             foreach (var subscription in settings.Subscriptions)
             {
-                services.AddSingleton<ICompetingConsumer>(provider => CreateConsumer(provider, settings, destinationSettings, subscription.StreamName, subscription.GroupName));
+                services.AddSingleton(provider => CreateConsumer(provider, settings, destinationSettings, subscription.StreamName, subscription.GroupName));
             }
 
             return services;
@@ -58,6 +57,7 @@ namespace Ditto.Sqs.Consumer
                 destinationSettings,
                 settings,
                 provider.GetRequiredService<ILogger>(),
+                provider.GetRequiredService<IEventStoreWriter>(),
                 streamName,
                 groupName
             );

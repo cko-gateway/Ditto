@@ -15,24 +15,24 @@ using ILogger = Serilog.ILogger;
 
 namespace Ditto.Sqs.Consumer
 {
-}
-
-/// <summary>
+    /// <summary>
     /// Stream consumer that replicates to the destination event store
     /// </summary>
     public class ReplicatingConsumer : ICompetingConsumer
     {
         private readonly IAmazonKinesis _kinesis;
         private readonly KinesisSettings _kinesisSettings;
-        private readonly Serilog.ILogger _logger;
+        private readonly ILogger _logger;
+        private readonly IEventStoreWriter _eventStoreWriter;
         private readonly DittoSettings _dittoSettings;
 
-        public ReplicatingConsumer(IAmazonKinesis kinesis, KinesisSettings kinesisSettings, DittoSettings dittoSettings, ILogger logger, string streamName, string groupName)
+        public ReplicatingConsumer(IAmazonKinesis kinesis, KinesisSettings kinesisSettings, DittoSettings dittoSettings, ILogger logger, IEventStoreWriter eventStoreWriter, string streamName, string groupName)
         {
             _kinesis = kinesis ?? throw new ArgumentNullException(nameof(kinesis));
             _kinesisSettings = kinesisSettings ?? throw new ArgumentNullException(nameof(kinesisSettings));
             _dittoSettings = dittoSettings ?? throw new ArgumentNullException(nameof(dittoSettings));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _eventStoreWriter = eventStoreWriter ?? throw new ArgumentNullException(nameof(eventStoreWriter));
 
             StreamName = streamName ?? throw new ArgumentNullException(nameof(streamName));
             GroupName = groupName ?? throw new ArgumentNullException(nameof(groupName));
@@ -75,6 +75,9 @@ namespace Ditto.Sqs.Consumer
                 await _kinesis.PutRecordAsync(request);
             }
 
+            // Fill out
+            await _eventStoreWriter.SaveAsync(null, default);
+
             if (_dittoSettings.ReplicationThrottleInterval.GetValueOrDefault() > 0)
                 await Task.Delay(_dittoSettings.ReplicationThrottleInterval.Value);
         }
@@ -107,4 +110,5 @@ namespace Ditto.Sqs.Consumer
             string json = JsonConvert.SerializeObject(wrapper, Formatting.None, SerializerSettings.Default);
             return new MemoryStream(Encoding.UTF8.GetBytes(json));
         }
+    }
 }
