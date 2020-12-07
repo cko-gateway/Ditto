@@ -5,6 +5,6 @@ namespace Ditto.Sqs.Consumer
 {
     public interface IEventStoreWriter
     {
-        Task SaveAsync(object a, CancellationToken cancellationToken);
+        Task SaveAsync(SqsEvent sqsEvent, CancellationToken cancellationToken);
     }
 }
