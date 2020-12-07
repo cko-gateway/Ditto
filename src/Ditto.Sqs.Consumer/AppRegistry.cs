@@ -1,13 +1,11 @@
-using System;
-using Amazon.Kinesis;
 using Ditto.Core;
-using EventStore.ClientAPI;
+using Ditto.Sqs.Consumer.EventStore;
+using Gateway.Extensions.Sqs.Consumers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
-using ILogger = Serilog.ILogger;
 
-namespace Ditto.Kinesis
+namespace Ditto.Sqs.Consumer
 {
     /// <summary>
     /// Registry of application dependencies used to configure StructureMap containers
@@ -16,51 +14,35 @@ namespace Ditto.Kinesis
     {
         public static ServiceCollection Register(IConfiguration configuration, ServiceCollection services)
         {
-            services.AddSingleton<IConfiguration>(configuration);
+            services.AddSingleton(configuration);
 
-            services.AddDefaultAWSOptions(configuration.GetAWSOptions());
-            services.AddAWSService<IAmazonKinesis>();
-            
             // Binds the "Settings" section from appsettings.json to AppSettings
             var settings = configuration.Bind<DittoSettings>("Settings");
             services.AddSingleton(settings);
 
-            var destinationSettings = configuration.Bind<KinesisSettings>("Kinesis");
-            services.AddSingleton(destinationSettings);
+            var consumerOptions = configuration.GetSection("Consumer").Get<ConsumerOptions>();
+            services.AddSingleton(consumerOptions);
+
+            services.AddSqsConsumers(builder =>
+                builder
+                    .FromConfiguration(configuration)
+                    .Consume("ditto",
+                        consume => consume
+                            .CreateServiceScopePerHandler()
+                            .IgnoreUnregisteredTypes()
+                            .TreatUnregisteredTypesAsHandled()
+                            .WithHandler<EventWrapper, SqsEventHandler>(nameof(EventWrapper))
+                            .WithReaderCount(1)
+                            .WithMaxInFlightMessages(consumerOptions.WithMaxInFlightMessages))
+                            .Build()
+                );
 
             services.AddSingleton<AppService>();
-
-            services.AddSingleton<ILogger>(Log.Logger);
-
-            services.AddSingleton<IEventStoreConnection>(provider 
-                => ConnectionFactory.CreateEventStoreConnection(provider.GetService<ILogger>(), settings.SourceEventStoreConnectionString, "Ditto:Source"));
-
-            services.AddSingleton<IConsumerManager, CompetingConsumerManager>();
-
-            // Register replicating consumers
-            foreach (var subscription in settings.Subscriptions)
-            {
-                services.AddSingleton<ICompetingConsumer>(provider => CreateConsumer(provider, settings, destinationSettings, subscription.StreamName, subscription.GroupName));
-            }
+            services.AddSingleton(Log.Logger);
+            services.AddSingleton<IEventStoreConnectionProvider, EventStoreConnectionProvider>();
+            services.AddSingleton<IEventStoreWriter, EventStoreWriter>();
 
             return services;
-        }
-
-        private static ICompetingConsumer CreateConsumer(
-            IServiceProvider provider,
-            DittoSettings settings,
-            KinesisSettings destinationSettings,
-            string streamName,
-            string groupName)
-        {
-            return new ReplicatingConsumer(
-                provider.GetRequiredService<IAmazonKinesis>(),
-                destinationSettings,
-                settings,
-                provider.GetRequiredService<ILogger>(),
-                streamName,
-                groupName
-            );
         }
     }
 }
